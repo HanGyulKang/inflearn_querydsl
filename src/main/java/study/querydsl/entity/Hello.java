@@ -1,10 +1,10 @@
 package study.querydsl.entity;
 
-import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
@@ -13,6 +13,6 @@ import javax.persistence.Id;
 public class Hello {
 
     @Id
-    @Generated
+    @GeneratedValue
     private Long id;
 }
