@@ -3,6 +3,7 @@ package study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.assertj.core.api.Assert;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -233,8 +234,67 @@ public class QuerydslBasicTest {
 
         Assertions.assertThat(teamB.get(team.name)).isEqualTo("teamB");
         Assertions.assertThat(teamB.get(member.age.avg())).isEqualTo(35);
+    }
 
+    /**
+     * teamA에 소속된 모든 회원 찾기
+     */
+    @Test
+    public void join() {
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .leftJoin(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
 
+        Assertions.assertThat(result)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+    }
 
+    /**
+     * [세타 조인]
+     * 회원의 이름이 팀 이름과 같은 회원을 조회
+     */
+    @Test
+    public void theta_join() {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member, team)
+                .where(member.username.eq(team.name))
+                .fetch();
+
+        Assertions.assertThat(result)
+                .extracting("username")
+                .containsExactly("teamA", "teamB");
+    }
+
+    @Test
+    public void outer_join() {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Tuple> result = queryFactory
+                .select(member, team.name)
+                .from(member)
+                .leftJoin(team)
+                .on(member.username.eq(team.name))
+                .orderBy(team.name.asc().nullsLast())
+                .fetch();
+
+        for (Tuple m: result) {
+            System.out.println(m.toString());
+        }
+
+        Tuple result1 = result.get(0);
+        Tuple result2 = result.get(1);
+
+        Assertions.assertThat(result1.get(team.name)).isEqualTo("teamA");
+        Assertions.assertThat(result2.get(team.name)).isEqualTo("teamB");
     }
 }
