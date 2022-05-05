@@ -1,8 +1,11 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +58,9 @@ public class QuerydslMiddleTest {
         em.persist(member4);
     }
 
+    /** ========================================================================
+     * 1. Projection
+     ======================================================================== */
     @Test
     public void simpleProjection() {
         List<String> result = jpaQueryFactory
@@ -175,5 +181,60 @@ public class QuerydslMiddleTest {
         for(MemberDto m : result) {
             System.out.println(m);
         }
+    }
+
+
+    /** ========================================================================
+     * 2. 동적 쿼리
+     ======================================================================== */
+    @Test
+    public void dynamicQuery() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        // BooleanBuilder 사용
+        List<Member> resultA = searchMemberWithBooleanBuilder(usernameParam, ageParam);
+        // where절 다중 파라미터
+        List<MemberDto> resultB = searchMemberWithMultiWhere(usernameParam, ageParam);
+        assertThat(resultA.size()).isEqualTo(1);
+        assertThat(resultB.size()).isEqualTo(1);
+
+    }
+
+    private List<Member> searchMemberWithBooleanBuilder(String usernameCond, Integer ageCond) {
+        // 초기값 지정 가능
+        // BooleanBuilder builder = new BooleanBuilder(member.username.eq(usernameCond));
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if(usernameCond != null) {
+            builder.and(member.username.eq(usernameCond));
+        }
+
+        if(ageCond != null) {
+            builder.and(member.age.eq(ageCond));
+        }
+
+        return jpaQueryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch();
+    }
+    private List<MemberDto> searchMemberWithMultiWhere(String usernameCond , Integer ageCond) {
+        return jpaQueryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .where(usernameEq(usernameCond), ageEq(ageCond))
+                //.where(allEq(usernameCond, ageCond))
+                .fetch();
+    }
+
+    private BooleanExpression usernameEq(String usernameCond) {
+        return usernameCond == null ? null : member.username.eq(usernameCond);
+    }
+    private BooleanExpression ageEq(Integer ageCond) {
+        return ageCond == null ? null : member.age.eq(ageCond);
+    }
+    private BooleanExpression allEq(String usernameCond, Integer ageCond) {
+        return usernameEq(usernameCond).and(ageEq(ageCond));
     }
 }
