@@ -2,22 +2,31 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.assertj.core.api.Assert;
-import org.assertj.core.api.Assertions;
+import org.hibernate.SQLQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.jdbc.object.SqlQuery;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
-import study.querydsl.entity.QTeam;
+import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
+import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
 import static study.querydsl.entity.QTeam.team;
 
@@ -62,7 +71,7 @@ public class QuerydslBasicTest {
                 .setParameter("username", "member1")
                 .getSingleResult();
 
-        Assertions.assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
     @Test
@@ -76,7 +85,7 @@ public class QuerydslBasicTest {
                 .where(member.username.eq("member1"))
                 .fetchOne();
 
-        Assertions.assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
     @Test
@@ -88,7 +97,7 @@ public class QuerydslBasicTest {
                 )
                 .fetchOne();
 
-        Assertions.assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getUsername()).isEqualTo("member1");
     }
     @Test
     public void searchAndParam() {
@@ -100,7 +109,7 @@ public class QuerydslBasicTest {
                 )
                 .fetchOne();
 
-        Assertions.assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
     @Test
@@ -153,9 +162,9 @@ public class QuerydslBasicTest {
         Member member5 = result.get(0);
         Member member6 = result.get(1);
         Member memberNull = result.get(2);
-        Assertions.assertThat(member5.getUsername()).isEqualTo("member5");
-        Assertions.assertThat(member6.getUsername()).isEqualTo("member6");
-        Assertions.assertThat(memberNull.getUsername()).isNull();
+        assertThat(member5.getUsername()).isEqualTo("member5");
+        assertThat(member6.getUsername()).isEqualTo("member6");
+        assertThat(memberNull.getUsername()).isNull();
     }
 
     @Test
@@ -167,7 +176,7 @@ public class QuerydslBasicTest {
                 .limit(2)
                 .fetch();
 
-        Assertions.assertThat(result.size()).isEqualTo(2);
+        assertThat(result.size()).isEqualTo(2);
     }
 
     @Test
@@ -179,10 +188,10 @@ public class QuerydslBasicTest {
                 .limit(2)
                 .fetchResults();
 
-        Assertions.assertThat(queryResult.getTotal()).isEqualTo(4);
-        Assertions.assertThat(queryResult.getLimit()).isEqualTo(2);
-        Assertions.assertThat(queryResult.getTotal()).isEqualTo(1);
-        Assertions.assertThat(queryResult.getResults().size()).isEqualTo(2);
+        assertThat(queryResult.getTotal()).isEqualTo(4);
+        assertThat(queryResult.getLimit()).isEqualTo(2);
+        assertThat(queryResult.getTotal()).isEqualTo(1);
+        assertThat(queryResult.getResults().size()).isEqualTo(2);
     }
 
     @Test
@@ -204,11 +213,11 @@ public class QuerydslBasicTest {
                 .fetch();
 
         Tuple tuple = result.get(0);
-        Assertions.assertThat(tuple.get(member.count())).isEqualTo(4);
-        Assertions.assertThat(tuple.get(member.age.sum())).isEqualTo(100);
-        Assertions.assertThat(tuple.get(member.age.avg())).isEqualTo(25);
-        Assertions.assertThat(tuple.get(member.age.max())).isEqualTo(40);
-        Assertions.assertThat(tuple.get(member.age.min())).isEqualTo(10);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
     }
 
     /**
@@ -229,11 +238,11 @@ public class QuerydslBasicTest {
         Tuple teamA = result.get(0);
         Tuple teamB = result.get(1);
 
-        Assertions.assertThat(teamA.get(team.name)).isEqualTo("teamA");
-        Assertions.assertThat(teamA.get(member.age.avg())).isEqualTo(15);
+        assertThat(teamA.get(team.name)).isEqualTo("teamA");
+        assertThat(teamA.get(member.age.avg())).isEqualTo(15);
 
-        Assertions.assertThat(teamB.get(team.name)).isEqualTo("teamB");
-        Assertions.assertThat(teamB.get(member.age.avg())).isEqualTo(35);
+        assertThat(teamB.get(team.name)).isEqualTo("teamB");
+        assertThat(teamB.get(member.age.avg())).isEqualTo(35);
     }
 
     /**
@@ -247,7 +256,7 @@ public class QuerydslBasicTest {
                 .where(team.name.eq("teamA"))
                 .fetch();
 
-        Assertions.assertThat(result)
+        assertThat(result)
                 .extracting("username")
                 .containsExactly("member1", "member2");
     }
@@ -268,7 +277,7 @@ public class QuerydslBasicTest {
                 .where(member.username.eq(team.name))
                 .fetch();
 
-        Assertions.assertThat(result)
+        assertThat(result)
                 .extracting("username")
                 .containsExactly("teamA", "teamB");
     }
@@ -294,8 +303,8 @@ public class QuerydslBasicTest {
         Tuple result1 = result.get(0);
         Tuple result2 = result.get(1);
 
-        Assertions.assertThat(result1.get(team.name)).isEqualTo("teamA");
-        Assertions.assertThat(result2.get(team.name)).isEqualTo("teamB");
+        assertThat(result1.get(team.name)).isEqualTo("teamA");
+        assertThat(result2.get(team.name)).isEqualTo("teamB");
     }
 
     /**
@@ -314,5 +323,188 @@ public class QuerydslBasicTest {
         for(Tuple t : result) {
             System.out.println(t);
         }
+    }
+
+    @Test
+    public void join_on_filtering2() {
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team)
+                .on(member.team.name.eq(team.name))
+                .fetch();
+
+        for(Tuple t : result) {
+            System.out.println(t);
+        }
+    }
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    /**
+     * fetch join : 연관된 엔티티를 한 번에 조회 : 성능 최적화
+     */
+    public void no_fetch_join() {
+        em.flush();
+        em.clear();
+
+        Member findmember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findmember.getTeam());;
+        assertThat(loaded).as("페치 조인 미적용").isFalse();
+    }
+    @Test
+    public void fetch_join() {
+        em.flush();
+        em.clear();
+
+        Member findmember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findmember.getTeam());;
+        assertThat(loaded).as("페치 조인 적용").isTrue();
+    }
+
+    /**
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    public void subQuery() {
+        // 서브쿼리를 위해 alias를 변경해야하기 때문에 새로운 객체 생성
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(
+                        select(memberSub.age.max())
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(40);
+    }
+
+    /**
+     * 나이가 평균 이상인 회원
+     */
+    @Test
+    public void subQueryGoe() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.goe(
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                )).fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(30, 40);
+    }
+    @Test
+    public void subQueryIn() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10))
+                )).fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(20, 30, 40);
+    }
+
+    @Test
+    public void selectSubQuery() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Tuple> result = queryFactory
+                .select(member.username,
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                )
+                .from(member)
+                .fetch();
+
+        for(Tuple t : result) {
+            System.out.println(t);
+        }
+    }
+
+    @Test
+    public void basicCase() {
+        List<String> result = queryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for(String s : result) {
+            System.out.println(s);
+        }
+    }
+
+    @Test
+    public void complexCase() {
+        List<String> result = queryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(0, 20)).then("0~20살")
+                        .when(member.age.between(21, 30)).then("21살~30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for(String s : result) {
+            System.out.println(s);
+        }
+    }
+
+    /**
+     * 상수를 출력하고 싶을 때
+     */
+    @Test
+    public void constant() {
+        List<Tuple> result_A = queryFactory
+                .select(member.username
+                        , Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        List<Tuple> result_B = queryFactory
+                .select(member.username
+                        , Expressions.constant("B"))
+                .from(member)
+                .fetch();
+
+        result_A.addAll(result_B);
+
+        for(Tuple t : result_A) {
+            System.out.println(t);
+        }
+    }
+
+    @Test
+    public void concat() {
+        String str = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        System.out.println(str);
     }
 }
