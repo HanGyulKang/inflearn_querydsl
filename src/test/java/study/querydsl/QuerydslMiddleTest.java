@@ -6,11 +6,13 @@ import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -237,4 +239,113 @@ public class QuerydslMiddleTest {
     private BooleanExpression allEq(String usernameCond, Integer ageCond) {
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
+
+
+    /** ========================================================================
+     * 3. 수정, 삭제 배치 쿼리
+     ======================================================================== */
+    /**
+     * 대량 데이터 처리 (벌크 업데이트)
+     */
+    @Test
+    //@Commit
+    public void bulkUpdate() {
+        // count : 영향을 받은 건수
+        // 1. 영속성 컨텍스트를 무시하고 실행되기 때문에 데이터베이스와 영속성 컨텍스트의 값이 다름
+        long count = jpaQueryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        // 3. 우선권에 대한 문제 해결 : EntityManager 초기화
+        /**
+         * 매우 중요
+         */
+        em.flush();
+        em.clear();
+
+        // 2. 우선권 : 영속성 컨텍스트 > 데이터베이스
+        List<Member> result = jpaQueryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for(Member m : result) {
+            System.out.println(m);
+        }
+    }
+
+    @Test
+    public void bulkAdd() {
+        jpaQueryFactory
+                .update(member)
+                // 더 하기
+                .set(member.age, member.age.add(1))
+                // 빼기
+                //.set(member.age, member.age.add(-1))
+                // 곱하기
+                // .set(member.age, member.age.multiply(2))
+                .execute();
+
+        em.flush();
+        em.clear();
+    }
+
+    @Test
+    public void bulkDelete() {
+        long count = jpaQueryFactory
+                .delete(member)
+                .where(member.age.goe(18))
+                .execute();
+
+        em.flush();
+        em.clear();
+
+        List<Member> result = jpaQueryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for(Member m : result) {
+            System.out.println(m);
+        }
+    }
+
+
+    /** ========================================================================
+     * 4. SQL function 호출
+     ======================================================================== */
+    @Test
+    public void sqlFunction1() {
+        List<String> result = jpaQueryFactory
+                .select(Expressions.stringTemplate(
+                        "function('replace', {0}, {1}, {2})",
+                        member.username, "member", "M")
+                )
+                .from(member)
+                .fetch();
+
+        for(String s : result) {
+            System.out.println(s);
+        }
+    }
+
+    @Test
+    public void sqlFunction2() {
+        List<String> result = jpaQueryFactory
+                .select(member.username)
+                .from(member)
+//                .where(member.username.eq(
+//                        Expressions.stringTemplate(
+//                                "function('lower', {0})",
+//                                member.username
+//                        )
+//                ))
+                .where(member.username.eq(member.username.lower()))
+                .fetch();
+
+        for(String s : result) {
+            System.out.println(s);
+        }
+    }
+
 }
