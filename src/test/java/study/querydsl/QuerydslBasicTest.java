@@ -492,6 +492,27 @@ public class QuerydslBasicTest {
 
         result_A.addAll(result_B);
 
+        Collections.sort(result_A, new Comparator<Tuple>() {
+            @Override
+            public int compare(Tuple o1, Tuple o2) {
+                int getO1 = o1.get(0, String.class).charAt(o1.get(0, String.class).length() - 1);
+                int getO2 = o2.get(0, String.class).charAt(o2.get(0, String.class).length() - 1);
+
+                if(getO1 < getO2) {
+                    return -1;
+                } else if(getO1 > getO2) {
+                    return 1;
+                }
+
+                return 0;
+            }
+            @Override
+            public String toString() {
+                return super.toString();
+            }
+
+        });
+
         for(Tuple t : result_A) {
             System.out.println(t);
         }
