@@ -14,7 +14,10 @@ public class QuerydslApplication {
 		SpringApplication.run(QuerydslApplication.class, args);
 	}
 
-	@Bean
+	// 동시성의 문제...
+	// 모든 동시성의 문제는 EntityManager가 관리 함
+	// 트랜잭션 단위로 전량 분리되어 작동함
+	@Bean // 싱글톤
 	JPAQueryFactory jpaQueryFactory(EntityManager em) {
 		return new JPAQueryFactory(em);
 	}
