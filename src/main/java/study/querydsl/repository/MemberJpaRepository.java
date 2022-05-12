@@ -109,8 +109,8 @@ public class MemberJpaRepository {
         return queryFactory
                 .select(new QMemberTeamDto(
                     member.id.as("memberId"),
-                    member.username,
-                    member.age,
+                    member.username.as("username"),
+                    member.age.as("age"),
                     team.id.as("teamId"),
                     team.name.as("teamName")
                 ))
