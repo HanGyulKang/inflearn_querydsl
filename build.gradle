@@ -50,9 +50,9 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
-}
+//tasks.named('test') {
+//	useJUnitPlatform()
+//}
 
 // querydsl 추가 시작(gradle version 5.0 이상)
 def querydslDir = "$buildDir/generated/querydsl"
