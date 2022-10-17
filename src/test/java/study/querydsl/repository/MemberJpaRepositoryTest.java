@@ -93,6 +93,4 @@ class MemberJpaRepositoryTest {
                 .containsExactly("member4");
 
     }
-
-
 }
