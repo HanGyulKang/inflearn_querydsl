@@ -34,6 +34,9 @@ class MemberRepositoryTest {
     @Autowired
     MemberQueryRepository memberQueryRepository;
 
+    @Autowired
+    MemberTestRepository memberTestRepository;
+
     @Test
     @Rollback
     public void basicTest() {
@@ -119,6 +122,32 @@ class MemberRepositoryTest {
         assertThat(result1.getContent())
                 .extracting("username")
                 .containsExactly("member1", "member2", "member3");
+
+        // QuerydslRepositorySupport custom test
+        condition.setAgeGoe(10);
+        condition.setAgeLoe(40);
+        condition.setUsername("member1");
+        condition.setTeamName("teamA");
+
+        Page<Member> result2 = memberTestRepository.applyPaginationSimple(condition, pageRequest);
+
+        List<Member> content = result2.getContent();
+        System.out.println("content size : " + content.size());
+        for(Member m : content) {
+            System.out.println(m.toString());
+        }
+
+        assertThat(result2.getContent().size()).isEqualTo(1);
+        assertThat(result2.getContent())
+                .extracting("username")
+                .containsExactly("member1");
+
+
+        Page<Member> result3 = memberTestRepository.applyPaginationComplex(condition, pageRequest);
+        assertThat(result3.getContent().size()).isEqualTo(1);
+        assertThat(result3.getContent())
+                .extracting("username")
+                .containsExactly("member1");
     }
 
     @Test
